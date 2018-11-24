@@ -1,8 +1,10 @@
 package com.jwell.doorcontrol.utils;
 
+import lombok.Data;
 import org.apache.mina.core.buffer.IoBuffer;
 import org.apache.mina.core.service.IoConnector;
 import org.apache.mina.core.session.IoSession;
+import org.apache.tomcat.jni.Thread;
 
 import java.util.Queue;
 
@@ -10,7 +12,8 @@ import java.util.Queue;
  *  微耕 udp 短报文协议
  * @author  ljy
  */
-public final class WgUdpCommShortUtil {
+@Data
+public final class WgUdpCommShort {
     public static final Integer WG_PACKET_SIZE = 64; // 报文长度
     public static final Byte TYPE = 0x17;  //类型
     public static final Integer CONTROLLER_PORT = 60000; // 控制器端口
@@ -27,7 +30,7 @@ public final class WgUdpCommShortUtil {
 
     IoConnector connector;
 
-    public WgUdpCommShortUtil() {
+    public WgUdpCommShort() {
         resetData();
     }
 
@@ -66,7 +69,7 @@ public final class WgUdpCommShortUtil {
      * @param bytlen
      * @return
      */
-    public static long getLongByByte(byte[] data, int startIndex, int bytlen) {
+    public static long getLongByByte(Byte[] data, int startIndex, int bytlen) {
         long ret = -1;
         if ((bytlen >= 1) && (bytlen <= 8)) {
             ret = getIntByByte(data[startIndex + bytlen - 1]);
@@ -205,7 +208,7 @@ public final class WgUdpCommShortUtil {
             long commTimeoutMsMin = 300;
             long endTicks = startTicks + commTimeoutMsMin;
             if (startTicks > endTicks) {
-                 System.out.println("超时");
+                 System.out.println("超时...");
                 try {
                     Thread.sleep(30);
                 } catch (InterruptedException e) {
