@@ -1,10 +1,10 @@
-package com.jwell.doorcontrol.controller;
-
-import java.util.Queue;
+package com.jwell.doorcontrol.utils.udp;
 
 import org.apache.mina.core.buffer.IoBuffer;
 import org.apache.mina.core.service.IoConnector;
 import org.apache.mina.core.session.IoSession;
+
+import java.util.Queue;
 
 /***
  *  微耕 udp 短报文协议

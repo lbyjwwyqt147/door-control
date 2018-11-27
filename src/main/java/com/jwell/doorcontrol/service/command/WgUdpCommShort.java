@@ -1,10 +1,12 @@
-package com.jwell.doorcontrol.utils;
+package com.jwell.doorcontrol.service.command;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.ToString;
+import lombok.extern.log4j.Log4j2;
 import org.apache.mina.core.buffer.IoBuffer;
 import org.apache.mina.core.service.IoConnector;
 import org.apache.mina.core.session.IoSession;
-import org.apache.tomcat.jni.Thread;
 
 import java.util.Queue;
 
@@ -13,17 +15,25 @@ import java.util.Queue;
  * @author  ljy
  */
 @Data
+@AllArgsConstructor
+@ToString(callSuper = true)
+@Log4j2
 public final class WgUdpCommShort {
-    public static final Integer WG_PACKET_SIZE = 64; // 报文长度
-    public static final Byte TYPE = 0x17;  //类型
-    public static final Integer CONTROLLER_PORT = 60000; // 控制器端口
-    public static final long SPECIAL_FLAG = 0x55AAAA55; // 特殊标识 防止误操作
+    /**  报文长度 */
+    public static final Integer WG_PACKET_SIZE = 64;
+    /** 类型  */
+    public static final Byte TYPE = 0x17;
+    /** 控制器端口 */
+    public static final Integer CONTROLLER_PORT = 60000;
+    /**  特殊标识 防止误操作 */
+    public static final long SPECIAL_FLAG = 0x55AAAA55;
 
     /** 功能指令代码 */
     private Byte functionId;
     /** 控制器设备序列号 */
-    private Long controllerSN;
-    private Byte[] data = new Byte[56]; // 56字节的数据 [含流水号]
+    private Integer controllerSN;
+    /**  56字节的数据 [含流水号] */
+    private byte[] data = new byte[56];
 
     private static long globalXid = 0L;
     protected long xid = 0L;
@@ -39,7 +49,7 @@ public final class WgUdpCommShort {
      * @param number
      * @return
      */
-    public static byte[] longToByte(Long number) {
+    public static byte[] longToByte(long number) {
         byte[] b = new byte[8];
         for (int i = 0; i < 8; i++) {
             b[i] = (byte) (number % 256);
@@ -53,7 +63,7 @@ public final class WgUdpCommShort {
      * @param bt
      * @return
      */
-    public static int getIntByByte(Byte bt) {
+    public static int getIntByByte(byte bt) {
         if (bt < 0) {
             return (bt + 256);
         } else {
@@ -69,7 +79,7 @@ public final class WgUdpCommShort {
      * @param bytlen
      * @return
      */
-    public static long getLongByByte(Byte[] data, int startIndex, int bytlen) {
+    public static long getLongByByte(byte[] data, int startIndex, int bytlen) {
         long ret = -1;
         if ((bytlen >= 1) && (bytlen <= 8)) {
             ret = getIntByByte(data[startIndex + bytlen - 1]);
@@ -89,7 +99,8 @@ public final class WgUdpCommShort {
         if ((globalXid >= 0x4fffffff) || (globalXid < 0x40000001)) {
             globalXid = 0x40000001;
         }
-        xid = globalXid; // 新的值
+        // 新的值
+        xid = globalXid;
     }
 
     /**
@@ -121,7 +132,7 @@ public final class WgUdpCommShort {
     /**
      * 数据复位
      */
-    public void resetData() {
+    public  void resetData() {
         for (int i = 0; i < data.length; i++) {
             data[i] = 0;
         }
@@ -170,16 +181,17 @@ public final class WgUdpCommShort {
      * @param command
      * @return
      */
-    public byte[] getInfo(Long controllerSN, byte[] command) {
+    public byte[] getInfo(Integer controllerSN, byte[] command) {
         byte[] bytCommand = command;
         IoBuffer b;
 
-        int iget = WatchingShortHandler.getArrSNReceived().indexOf(controllerSN);
+        int iget = WatchingShortHandler.arrSNReceived.indexOf(controllerSN);
         if (iget < 0) {
             return null;
         }
-        IoSession session = WatchingShortHandler.getArrControllerInfo().get(iget).Session; // connFuture.getSession();
-        Queue<byte[]> queueApplication = WatchingShortHandler.getArrControllerInfo().get(iget).queueOfReply;
+        //connFuture.getSession();
+        IoSession session = WatchingShortHandler.arrControllerInfo.get(iget).getIoSession();
+        Queue<byte[]> queueApplication = WatchingShortHandler.arrControllerInfo.get(iget).getQueueOfReply();
         // 先清空接收缓冲区
         if (queueApplication != null) {
             synchronized (queueApplication) {
@@ -208,9 +220,9 @@ public final class WgUdpCommShort {
             long commTimeoutMsMin = 300;
             long endTicks = startTicks + commTimeoutMsMin;
             if (startTicks > endTicks) {
-                 System.out.println("超时...");
+                log.info("链接超时..........");
                 try {
-                    Thread.sleep(30);
+                    java.lang.Thread.sleep(30L);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -239,21 +251,21 @@ public final class WgUdpCommShort {
                         bSuccess = 1;
                         break;
                     } else {
-                        System.out.println("无效包 xid=%d\\r\\n");
+                        log.info("无效数据包 ..........");
                     }
                 } else {
                     if ((startTicks + 1) < java.util.Calendar.getInstance().getTimeInMillis()) {
 
                     } else if (startIndex > 10) {
                         try {
-                            Thread.sleep(30);
+                            java.lang.Thread.sleep(30L);
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }
                     } else {
                         startIndex++;
                         try {
-                            Thread.sleep(1);
+                            java.lang.Thread.sleep(1L);
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }
@@ -276,10 +288,10 @@ public final class WgUdpCommShort {
         }
 
         if (bSuccess > 0) {
-             System.out.println("通信 成功");
+            log.info("与微耕控制板通信 成功。");
             return bytget;
         } else {
-            System.out.println("通信 失败....");
+            log.info("与微耕控制板通信 失败....");
         }
         return null;
     }

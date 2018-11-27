@@ -1,4 +1,4 @@
-package com.jwell.doorcontrol.utils;
+package com.jwell.doorcontrol.utils.udp;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -13,9 +13,6 @@ import java.util.LinkedList;
 import java.util.Queue;
 
 
-import com.jwell.doorcontrol.controller.WatchingShortHandler;
-import com.jwell.doorcontrol.controller.WgUdpCommShort4Cloud;
-import com.jwell.doorcontrol.controller.wgControllerInfo;
 import org.apache.mina.transport.socket.DatagramSessionConfig;
 import org.apache.mina.transport.socket.nio.NioDatagramAcceptor;
 
@@ -187,6 +184,10 @@ public class TestShort {
 		success =0;
 		if (recvBuff != null)
 		{
+			long recordIndexGet = WgUdpCommShort4Cloud.getLongByByte(recvBuff, 8, 4);
+			log("索引：" + recordIndexGet);
+			int recordType = WgUdpCommShort4Cloud.getIntByByte(recvBuff[12]);
+			log("纪录类型 ==== ：" + recordType);
 			if (WgUdpCommShort4Cloud.getIntByByte(recvBuff[8]) == 1)
 			{
 				//有效开门.....
@@ -236,6 +237,8 @@ public class TestShort {
 		//2=门磁,按钮, 设备启动, 远程开门记录
 		//3=报警记录	1	
 		int recordType =WgUdpCommShort4Cloud.getIntByByte(recvBuff[12]);
+
+		log("纪录类型：" + recordType);
 
 		//13	有效性(0 表示不通过, 1表示通过)	1	
 		int recordValid = WgUdpCommShort4Cloud.getIntByByte(recvBuff[13]);

@@ -1,7 +1,7 @@
-package com.jwell.doorcontrol.utils;
+package com.jwell.doorcontrol.service.command;
 
-import com.jwell.doorcontrol.controller.WgUdpCommShort4Cloud;
-import com.jwell.doorcontrol.controller.wgControllerInfo;
+
+import lombok.extern.log4j.Log4j2;
 import org.apache.mina.core.buffer.IoBuffer;
 import org.apache.mina.core.service.IoHandlerAdapter;
 import org.apache.mina.core.session.IdleStatus;
@@ -13,7 +13,9 @@ import java.util.Queue;
 
 /***
  * 监控处理
+ * @author ljy
  */
+@Log4j2
 public class WatchingShortHandler extends IoHandlerAdapter {
 
 
@@ -23,9 +25,10 @@ public class WatchingShortHandler extends IoHandlerAdapter {
         this.queue = queue;
     }
 
-    private  static ArrayList<Integer> arrSNReceived = new ArrayList<>();
-    private  static ArrayList<wgControllerInfo> arrControllerInfo = new ArrayList<wgControllerInfo>();
-    private  static Queue<byte[]> queueApp = new LinkedList<>();  // 应用队列
+    public  static ArrayList<Integer> arrSNReceived = new ArrayList<>();
+    public  static ArrayList<WgControllerInfo> arrControllerInfo = new ArrayList<>();
+    /**  应用队列 */
+    public  static Queue<byte[]> queueApp = new LinkedList<>();
 
     /**
      * 异常来关闭session
@@ -42,14 +45,14 @@ public class WatchingShortHandler extends IoHandlerAdapter {
      * @param controllerSN
      * @return
      */
-    public static boolean isConnected(Long controllerSN) {
+    public static boolean isConnected(Integer controllerSN) {
         int iget = arrSNReceived.indexOf(controllerSN);
         if (iget >= 0) {
             if (arrControllerInfo.size() >= iget) {
-                wgControllerInfo info = arrControllerInfo.get(iget);
+                WgControllerInfo info = arrControllerInfo.get(iget);
                 if (info != null) {
                     //在5分钟以内
-                    if ((info.UpdateDateTime + 5*60*1000) > System.currentTimeMillis()) {
+                    if ((info.getUpdateDateTime() + 5*60*1000) > System.currentTimeMillis()) {
                         return true;
                     }
                 }
@@ -67,28 +70,29 @@ public class WatchingShortHandler extends IoHandlerAdapter {
         if (io.hasRemaining()) {
             byte[] validBytes = new byte[io.remaining()];
             io.get(validBytes, 0, io.remaining());
-            if (((validBytes.length == WgUdpCommShort4Cloud.WGPacketSize)
-                    || ((validBytes.length % WgUdpCommShort4Cloud.WGPacketSize) == 0)) //引入64的倍数, 用于二维码
+            if (((validBytes.length == WgUdpCommShort.WG_PACKET_SIZE)
+                    || ((validBytes.length % WgUdpCommShort.WG_PACKET_SIZE) == 0)) //引入64的倍数, 用于二维码
                     && (validBytes.length > 0)
-                    && (validBytes[0] == WgUdpCommShort4Cloud.Type))  //型号固定
+                    && (validBytes[0] == WgUdpCommShort.TYPE))  //型号固定
             {
                 synchronized (queue) {
                     queue.offer(validBytes);
                 }
-                long sn = WgUdpCommShort4Cloud.getLongByByte(validBytes, 4, 4);
-                int iget = arrSNReceived.indexOf((int) sn);
+                long sn = WgUdpCommShort.getLongByByte(validBytes, 4, 4);
+                int controlerSn = Integer.parseInt(String.valueOf(sn));
+                int iget = arrSNReceived.indexOf(controlerSn);
                 if (iget < 0) {
-                    arrSNReceived.add((int) sn);
-                    wgControllerInfo con = new wgControllerInfo();
-                    con.update((int) sn, session, validBytes);
+                    arrSNReceived.add(controlerSn);
+                    WgControllerInfo con = new WgControllerInfo();
+                    con.update(controlerSn, session, validBytes);
                     arrControllerInfo.add(con);
                 } else {
                     // 更新操作
-                    arrControllerInfo.get(iget).update((int) sn, session, validBytes);
+                    arrControllerInfo.get(iget).update(controlerSn, session, validBytes);
                 }
             }
         } else {
-            System.out.println("收到无效数据包: ????\r\n");
+            log.info("收到无效数据包: ????");
         }
     }
 
@@ -96,38 +100,23 @@ public class WatchingShortHandler extends IoHandlerAdapter {
 
     @Override
     public void sessionClosed(IoSession session) throws Exception {
-            System.out.println("服务器端关闭session...");
+        log.info("服务器端关闭IoSession...");
     }
 
     @Override
     public void sessionCreated(IoSession session) throws Exception {
-            System.out.println("服务器端成功创建一个session...");
+        log.info("服务器端成功创建一个IoSession...");
     }
 
     @Override
     public void sessionIdle(IoSession session, IdleStatus status)
             throws Exception {
-          System.out.println("Session idle...");
+        log.info("IoSession idle...");
     }
 
     @Override
     public void sessionOpened(IoSession session) throws Exception {
-        System.out.println("服务器端成功开启一个session...");
+        log.info("服务器端成功开启一个IoSession....");
     }
 
-    public static ArrayList<Integer> getArrSNReceived() {
-        return arrSNReceived;
-    }
-
-    public static void setArrSNReceived(ArrayList<Integer> arrSNReceived) {
-        WatchingShortHandler.arrSNReceived = arrSNReceived;
-    }
-
-    public static ArrayList<wgControllerInfo> getArrControllerInfo() {
-        return arrControllerInfo;
-    }
-
-    public static void setArrControllerInfo(ArrayList<wgControllerInfo> arrControllerInfo) {
-        WatchingShortHandler.arrControllerInfo = arrControllerInfo;
-    }
 }

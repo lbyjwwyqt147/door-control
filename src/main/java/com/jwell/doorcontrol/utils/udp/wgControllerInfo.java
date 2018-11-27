@@ -1,9 +1,9 @@
-package com.jwell.doorcontrol.controller;
+package com.jwell.doorcontrol.utils.udp;
+
+import org.apache.mina.core.session.IoSession;
 
 import java.util.LinkedList;
 import java.util.Queue;
-
-import org.apache.mina.core.session.IoSession;
 
 public class wgControllerInfo {
 	public int ControllerSN;

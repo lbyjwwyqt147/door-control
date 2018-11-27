@@ -1,7 +1,9 @@
 package com.jwell.doorcontrol.utils;
 
 
+import com.jwell.boot.utilscommon.utils.DateTimeUtils;
 
+import java.util.Date;
 
 public class QRTest {
 	
@@ -18,7 +20,19 @@ public class QRTest {
 		// infoA =	createQR(153139810,pwdData);
 		String infoA =	createQR(2482799616L,pwdData);
 		log("加密后的二维码数据:" + infoA);
-	}
+
+        log(String.format("0x%08x",3659533));
+        log(Integer.parseInt("37D70D",16) + "");
+        int i = 0x0037D70D;
+        log(i+"");
+        log(String.format("0x%02x",20));
+        log("0x"+20);
+        log((byte)0x20 + "");
+        log( "0x"+ (DateTimeUtils.getYmdhmsStringValue(new Date(), DateTimeUtils.YEAR).substring(0,2)));
+        log( "0x"+ (DateTimeUtils.getYmdhmsStringValue(new Date(), DateTimeUtils.YEAR).substring(2,4)));
+        log( "0x"+ (DateTimeUtils.getYmdhmsStringValue(new Date(), DateTimeUtils.MONTH)));
+
+    }
 
 	public static void log(String info) 
 	{
