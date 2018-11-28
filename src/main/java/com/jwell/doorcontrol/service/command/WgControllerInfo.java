@@ -2,12 +2,14 @@ package com.jwell.doorcontrol.service.command;
 
 import lombok.Data;
 import org.apache.mina.core.session.IoSession;
+import org.springframework.format.annotation.DateTimeFormat;
 
 import java.io.Serializable;
 import java.util.*;
 
 /***
  * 微耕 控制器信息
+ * @author ljy
  */
 @Data
 public class WgControllerInfo implements Serializable {
@@ -15,7 +17,7 @@ public class WgControllerInfo implements Serializable {
 
     private static final long serialVersionUID = -2077270202026646892L;
     /** 控制器设备序列号 */
-    private Integer controllerSN;
+    private long controllerSN;
     /** 接收服务器的IP */
     private String watchServerIp;
     /** 接收服务器端口 (61005) */
@@ -38,16 +40,18 @@ public class WgControllerInfo implements Serializable {
     private Integer doorNo;
     /** 纪录类型  0 : 无记录  1: 刷卡记录 2: 门磁,按钮, 设备启动, 远程开门记录  3: 报警记录*/
     private Integer recordType;
-    /** 业务标志  0: 新增  1：修改  2：删除  3：获取纪录  4：查询*/
+    /** 业务标志   0:新增  1：修改  2：删除  3：获取纪录  4：查询 5: 清空全部 6: 批量操作 */
     private Byte mark;
-    /**  模块  0：远程开门  1：上传权限  2：删除权限 3：清空权限 4：权限查询 5: 批量上传权限 6：提取纪录*/
+    /**  模块  0：远程开门  1：上传权限  2：删除权限 3：清空权限 4：权限查询 5: 批量上传权限 6：提取纪录  7：搜索控制器  9：IP设置 10:读取IP */
     private Byte module;
     /** 开始时间 */
+    @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private Date startTime;
     /** 结束时间  */
+    @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private Date endTime;
     /** 卡号  */
-    private int cardNo;
+    private long cardNo;
     /** 一组 卡号 */
     private List<Integer> cardNoList = new ArrayList<>();
     /** bForceGetAllSwipe  >=1  强制提取所有记录(包括之前已提取的), ==0 表示 提取新的记录(不含 已提取过的) */

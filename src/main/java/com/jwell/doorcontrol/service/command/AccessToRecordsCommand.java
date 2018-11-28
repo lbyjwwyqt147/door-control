@@ -13,6 +13,15 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Component(value = "accessToRecordsCommand")
 @Log4j2
 public class AccessToRecordsCommand extends AbstractSendCommand {
+
+
+    /**
+     * 提取控制器上的纪录
+     *  controllerSN  控制器设备序列号
+     *  bForceGetAllSwipe  >=1  强制提取所有记录(包括之前已提取的), == 0 表示 提取新的记录(不含 已提取过的)
+     * @param wgControllerInfo
+     * @return
+     */
     @Override
     public AtomicInteger commandExecute(WgControllerInfo wgControllerInfo) {
         AtomicInteger success = new AtomicInteger(0);

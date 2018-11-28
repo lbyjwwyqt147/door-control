@@ -31,7 +31,7 @@ public final class WgUdpCommShort {
     /** 功能指令代码 */
     private Byte functionId;
     /** 控制器设备序列号 */
-    private Integer controllerSN;
+    private long controllerSN;
     /**  56字节的数据 [含流水号] */
     private byte[] data = new byte[56];
 
@@ -181,11 +181,11 @@ public final class WgUdpCommShort {
      * @param command
      * @return
      */
-    public byte[] getInfo(Integer controllerSN, byte[] command) {
+    public byte[] getInfo(long controllerSN, byte[] command) {
         byte[] bytCommand = command;
         IoBuffer b;
 
-        int iget = WatchingShortHandler.arrSNReceived.indexOf(controllerSN);
+        int iget = WatchingShortHandler.arrSNReceived.indexOf((int)controllerSN);
         if (iget < 0) {
             return null;
         }

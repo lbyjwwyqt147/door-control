@@ -7,35 +7,30 @@ import org.springframework.stereotype.Component;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /***
- * 远程开门
- * @author  ljy
+ *  读取控制器的IP和接收服务器IP和端口信息 指令
+ * @author ljy
  */
-@Component(value = "remoteOpenDoorCommand")
+@Component(value = "readControllerIpPortCommand")
 @Log4j2
-public class RemoteOpenDoorCommand extends AbstractSendCommand {
-
+public class ReadControllerIpPortCommand extends AbstractSendCommand {
 
     /**
-     *  远程开门
-     *  controllerSN  控制器设备序列号
-     *  doorNO  门号
+     * 读取控制器IP和接收服务器的IP和端口
+     * controllerSN  要读取的控制器设备序列号
      * @param wgControllerInfo
      * @return
      */
     @Override
     public AtomicInteger commandExecute(WgControllerInfo wgControllerInfo) {
-        wgControllerInfo.setModule((byte) 0);
-        this.moduleDescription = "远程开门";
-        this.successPromptMessage = " 远程开门成功.";
-        this.failPromptMessage = " 远程开门失败.";
+        wgControllerInfo.setModule((byte) 10);
+        this.moduleDescription = " 读取控制器IP和接收服务器的IP和端口 ";
+        this.successPromptMessage = "  读取控制器IP和接收服务器的IP和端口 成功.";
+        this.failPromptMessage = "  读取控制器IP和接收服务器的IP和端口 失败.";
         try {
             this.wgUdpCommShort = new WgUdpCommShort();
             wgUdpCommShort.resetData();
-            // 1.10	远程开门[功能号: 0x40]
-            wgUdpCommShort.setFunctionId((byte) 0x40);
-            byte[] datas = new byte[56];
-            datas[0] =(byte) (wgControllerInfo.getDoorNo() & 0xff);
-            wgUdpCommShort.setData(datas);
+            // 读取接收服务器的IP和端口 [功能号: 0x92]
+            wgUdpCommShort.setFunctionId((byte) 0x92);
             return super.commandExecute(wgControllerInfo);
         } catch (Exception e) {
             e.printStackTrace();

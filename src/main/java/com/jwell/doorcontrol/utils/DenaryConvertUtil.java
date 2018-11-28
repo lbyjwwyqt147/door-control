@@ -58,16 +58,16 @@ public final class DenaryConvertUtil {
     public static int getYMDValue(Date dateTime, Integer index) {
         switch (index) {
             case 1:
-                return Integer.valueOf("0x"+ (DateTimeUtils.getYmdhmsStringValue(dateTime, DateTimeUtils.YEAR).substring(0,2)));
+                return getDecimalism(DateTimeUtils.getYmdhmsStringValue(dateTime, DateTimeUtils.YEAR).substring(0,2));
             case 2:
-                return Integer.valueOf("0x"+ (DateTimeUtils.getYmdhmsStringValue(dateTime, DateTimeUtils.YEAR).substring(2,4)));
+                return getDecimalism(DateTimeUtils.getYmdhmsStringValue(dateTime, DateTimeUtils.YEAR).substring(2,4));
             case 3:
-                return Integer.valueOf("0x"+ (DateTimeUtils.getYmdhmsStringValue(dateTime, DateTimeUtils.MONTH)));
+                return getDecimalism(DateTimeUtils.getYmdhmsStringValue(dateTime, DateTimeUtils.MONTH));
             case 4:
-                return Integer.valueOf("0x"+ (DateTimeUtils.getYmdhmsStringValue(dateTime, DateTimeUtils.DAY)));
+                return getDecimalism(DateTimeUtils.getYmdhmsStringValue(dateTime, DateTimeUtils.DAY));
             default:
                 return 0;
         }
-
     }
+
 }

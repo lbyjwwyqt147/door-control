@@ -1,7 +1,6 @@
 package com.jwell.doorcontrol.service.command;
 
 import com.jwell.boot.utilscommon.exception.DescribeException;
-import com.jwell.boot.utilscommon.utils.DateTimeUtils;
 import com.jwell.doorcontrol.utils.DenaryConvertUtil;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Component;
@@ -20,13 +19,29 @@ public class AccessAuthorizationCommand extends AbstractSendCommand {
 
     @Override
     public AtomicInteger commandExecute(WgControllerInfo wgControllerInfo) {
-        return null;
+        switch (wgControllerInfo.getMark()) {
+            case 0:
+                return uploadAuthorization(wgControllerInfo);
+            case 1:
+                return uploadAuthorization(wgControllerInfo);
+            case 2:
+                return deleteAuthorization(wgControllerInfo);
+            case 5:
+                return clearAuthorization(wgControllerInfo);
+            case 4:
+                return queryAuthorization(wgControllerInfo);
+            case 6:
+                return batchUploadAuthorization(wgControllerInfo);
+            default:
+                return new AtomicInteger(0);
+        }
     }
 
     /**
      * 上传权限到控制板上
      * 1.11	权限添加或修改[功能号: 0x50]
-     * 需要传 cardNo 卡号
+     * controllerSN  控制器设备序列号
+     * cardNo 卡号
      * @param wgControllerInfo
      * @return
      */
@@ -41,9 +56,8 @@ public class AccessAuthorizationCommand extends AbstractSendCommand {
             // 1.11	权限添加或修改[功能号: 0x50]
             wgUdpCommShort.setFunctionId((byte) 0x50);
             byte[] datas = new byte[56];
-            datas[0] =(byte) (wgControllerInfo.getDoorNo() & 0xff);
             // 卡号
-            long cardNOOfPrivilege = DenaryConvertUtil.getDecadeSixteen(wgControllerInfo.getCardNo());
+            long cardNOOfPrivilege = wgControllerInfo.getCardNo();;
             System.arraycopy(WgUdpCommShort.longToByte(cardNOOfPrivilege) , 0, datas, 0, 4);
             //20 10 01 01 起始日期:  2010年01月01日   (必须大于2001年)
             datas[4] = (byte)DenaryConvertUtil.getYMDValue(wgControllerInfo.getStartTime(), 1);
@@ -73,9 +87,10 @@ public class AccessAuthorizationCommand extends AbstractSendCommand {
     }
 
     /**
-     * 删除控制板上权限
+     * 单个删除控制板上权限
      * 1.12	权限删除(单个删除)[功能号: 0x52]
-     * 需要传 cardNo 卡号
+     * controllerSN  控制器设备序列号
+     * cardNo 卡号
      * @param wgControllerInfo
      * @return
      */
@@ -90,9 +105,8 @@ public class AccessAuthorizationCommand extends AbstractSendCommand {
             // 1.12	权限删除(单个删除)[功能号: 0x52]
             wgUdpCommShort.setFunctionId((byte) 0x52);
             byte[] datas = new byte[56];
-            datas[0] =(byte) (wgControllerInfo.getDoorNo() & 0xff);
             // 卡号
-            long cardNOOfPrivilegeToDelete = DenaryConvertUtil.getDecadeSixteen(wgControllerInfo.getCardNo());
+            long cardNOOfPrivilegeToDelete = wgControllerInfo.getCardNo();
             System.arraycopy(WgUdpCommShort.longToByte(cardNOOfPrivilegeToDelete) , 0, datas, 0, 4);
             wgUdpCommShort.setData(datas);
             return super.commandExecute(wgControllerInfo);
@@ -106,6 +120,7 @@ public class AccessAuthorizationCommand extends AbstractSendCommand {
     /**
      * 权限清空(全部清掉)控制板上权限
      * 11.13	权限清空(全部清掉)[功能号: 0x54]
+     * controllerSN  控制器设备序列号
      * @param wgControllerInfo
      * @return
      */
@@ -120,7 +135,6 @@ public class AccessAuthorizationCommand extends AbstractSendCommand {
             // 11.13	权限清空(全部清掉)[功能号: 0x54]
             wgUdpCommShort.setFunctionId((byte) 0x54);
             byte[] datas = new byte[56];
-            datas[0] =(byte) (wgControllerInfo.getDoorNo() & 0xff);
             //12	标识(防止误设置)	1	0x55 [固定]
             System.arraycopy(WgUdpCommShort.longToByte(WgUdpCommShort.SPECIAL_FLAG) , 0, datas, 0, 4);
             wgUdpCommShort.setData(datas);
@@ -135,7 +149,8 @@ public class AccessAuthorizationCommand extends AbstractSendCommand {
     /**
      * 权限查询
      * 1.15	权限查询[功能号: 0x5A]
-     * 需要传 cardNo 卡号
+     * controllerSN  控制器SN
+     * cardNo 卡号
      * @param wgControllerInfo
      * @param
      * @return
@@ -155,9 +170,8 @@ public class AccessAuthorizationCommand extends AbstractSendCommand {
             // 1.15	权限查询[功能号: 0x5A]
             wgUdpCommShort.setFunctionId((byte) 0x5A);
             byte[] datas = new byte[56];
-            datas[0] =(byte) (wgControllerInfo.getDoorNo() & 0xff);
             // 卡号
-            long cardNOOfPrivilegeToQuery = DenaryConvertUtil.getDecadeSixteen(wgControllerInfo.getCardNo());
+            long cardNOOfPrivilegeToQuery = wgControllerInfo.getCardNo();
             System.arraycopy(WgUdpCommShort.longToByte(cardNOOfPrivilegeToQuery) , 0, datas, 0, 4);
             wgUdpCommShort.setData(datas);
             wgUdpCommShort.setControllerSN(wgControllerInfo.getControllerSN());
@@ -189,6 +203,9 @@ public class AccessAuthorizationCommand extends AbstractSendCommand {
      * 此功能实现 完全更新全部权限, 用户不用清空之前的权限. 只是将上传的权限顺序从第1个依次到最后一个上传完成. 如果中途中断的话, 仍以原权限为主
      * 建议权限数更新超过50个, 即可使用此指令
      * 如果权限数超过8万时, 中途中断的话, 权限会为空. 所以要上传完整
+     *
+     * controllerSN  控制器SN
+     * cardNoList  -组卡号
      * @param wgControllerInfo
      * @return
      */
@@ -225,10 +242,9 @@ public class AccessAuthorizationCommand extends AbstractSendCommand {
                         // 1.11	权限添加或修改[功能号: 0x50]
                         wgUdpCommShort.setFunctionId((byte) 0x56);
                         byte[] datas = new byte[56];
-                        datas[0] = (byte) (wgControllerInfo.getDoorNo() & 0xff);
 
                         // 卡号
-                        long cardNOOfPrivilege = DenaryConvertUtil.getDecadeSixteen(cardNo);
+                        long cardNOOfPrivilege = cardNo;
                         System.arraycopy(WgUdpCommShort.longToByte(cardNOOfPrivilege), 0, datas, 0, 4);
 
                         //20 10 01 01 起始日期:  2010年01月01日   (必须大于2001年)
@@ -287,7 +303,7 @@ public class AccessAuthorizationCommand extends AbstractSendCommand {
             log.info(this.logMessage.append(this.failPromptMessage).toString());
             throw  new DescribeException(this.failPromptMessage);
         }
-        return null;
+        return new AtomicInteger(0);
     }
 
 }

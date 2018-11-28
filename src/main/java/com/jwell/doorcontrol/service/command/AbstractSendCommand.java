@@ -3,7 +3,6 @@ package com.jwell.doorcontrol.service.command;
 
 import com.jwell.boot.utilscommon.exception.DescribeException;
 import lombok.extern.log4j.Log4j2;
-import org.apache.commons.lang3.StringUtils;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
