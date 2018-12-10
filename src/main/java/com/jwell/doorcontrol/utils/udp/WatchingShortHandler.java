@@ -125,22 +125,22 @@ public  static   Queue<byte[]> queueApp= new LinkedList<byte[]>(); //2018-07-11 
 
     @Override
     public void sessionClosed(IoSession session) throws Exception {
-//            System.out.println("服务器端关闭session...");
+            System.out.println("服务器端关闭session...");
     }
 
     @Override
     public void sessionCreated(IoSession session) throws Exception {
-//            System.out.println("服务器端成功创建一个session...");
+            System.out.println("服务器端成功创建一个session...");
     }
 
     @Override
     public void sessionIdle(IoSession session, IdleStatus status)
             throws Exception {
-       //  System.out.println("Session idle...");
+         System.out.println("Session idle...");
     }
 
     @Override
     public void sessionOpened(IoSession session) throws Exception {
-//            System.out.println("服务器端成功开启一个session...");
+            System.out.println("服务器端成功开启一个session...");
     }
 }

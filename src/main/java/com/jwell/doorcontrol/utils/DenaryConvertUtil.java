@@ -15,10 +15,10 @@ public final class DenaryConvertUtil {
     /**
      * 10 进制数字 转为 16进制
      * @param number
-     * @return  0x0037d70d
+     * @return  0x0037d70d  字符串
      */
-    public static long getDecadeSixteen(int number) {
-        return Long.valueOf(String.format("0x%08x",number));
+    public static String getDecadeSixteen(int number) {
+        return String.format("0x%08x",number);
     }
 
     /**
@@ -68,6 +68,28 @@ public final class DenaryConvertUtil {
             default:
                 return 0;
         }
+    }
+
+    /**
+     * 字节数组转成16进制表示格式的字符串
+     *
+     * @param byteArray
+     *            需要转换的字节数组
+     * @return 16进制表示格式的字符串
+     **/
+    public static String toHexString(byte[] byteArray) {
+        if (byteArray == null || byteArray.length < 1) {
+            throw new IllegalArgumentException("this byteArray must not be null or empty");
+        }
+        final StringBuilder hexString = new StringBuilder();
+        for (int i = 0; i < byteArray.length; i++) {
+            // 0~F前面不零
+            if ((byteArray[i] & 0xff) < 0x10) {
+                hexString.append("0");
+            }
+            hexString.append(Integer.toHexString(0xFF & byteArray[i]));
+        }
+        return hexString.toString().toLowerCase();
     }
 
 }

@@ -178,15 +178,21 @@ public class AccessAuthorizationCommand extends AbstractSendCommand {
             recvBuff = wgUdpCommShort.run();
             if (recvBuff != null) {
                 long cardNOOfPrivilegeToGet = WgUdpCommShort.getLongByByte(recvBuff,8, 4);
+                String msg = null;
                 if (cardNOOfPrivilegeToGet == 0) {
                     //没有权限时: (卡号部分为0)
-                    log .info(" 没有权限信息: (卡号部分为0)");
+                     msg = " 没有权限信息: (卡号部分为0)";
+                    log .info(msg);
                 } else {
                     //具体权限信息...
-                    log .info ("有权限信息...");
+                    msg = " 有权限信息 .....";
+                    log .info(msg);
+                    success.set(2);
                 }
-                log .info(this.logMessage.append(this.successPromptMessage).toString());
-                success.set(1);
+                log .info(this.logMessage.append(this.successPromptMessage + "\t " + msg).toString());
+                if (success.get() != 2) {
+                    success.set(1);
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();

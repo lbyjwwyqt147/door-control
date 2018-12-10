@@ -79,7 +79,7 @@ public class WatchingShortHandler extends IoHandlerAdapter {
                     queue.offer(validBytes);
                 }
                 long sn = WgUdpCommShort.getLongByByte(validBytes, 4, 4);
-                int controlerSn = Integer.parseInt(String.valueOf(sn));
+                int controlerSn = (int) sn;
                 int iget = arrSNReceived.indexOf(controlerSn);
                 if (iget < 0) {
                     arrSNReceived.add(controlerSn);

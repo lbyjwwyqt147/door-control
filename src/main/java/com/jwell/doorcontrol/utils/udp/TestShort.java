@@ -126,9 +126,9 @@ public class TestShort {
 				if (controllerSN > 400000000)
 				{
 				ret = testBasicFunctionRemoteOpenDoor(controllerSN,3 ); //基本功能测试 远程开门 3号门
-				ret = testBasicFunctionRemoteOpenDoor(controllerSN,4 ); //基本功能测试 远程开门 4号门		
+				ret = testBasicFunctionRemoteOpenDoor(controllerSN,4 ); //基本功能测试 远程开门 4号门
 				}
-				dealtIndex = dealtIndex+1; //2018-07-14 07:40:16 等待下一个接入设备 
+				dealtIndex = dealtIndex+1; //2018-07-14 07:40:16 等待下一个接入设备
 				//break; //2018-07-14 09:09:08 只处理一台控制器时
 			}
 			else
@@ -143,7 +143,7 @@ public class TestShort {
 		}
 		
 		if (controllerSN >0)  //针对最后一台控制器的处理
-		{		
+		{
 			if (WatchingShortHandler.isConnected(controllerSN))
 			{
 				//强制提取所有记录
@@ -1566,6 +1566,11 @@ public class TestShort {
 								long sn = WgUdpCommShort4Cloud.getLongByByte(recvBuff, 4, 4);
 								long recordIndexGet = WgUdpCommShort4Cloud.getLongByByte(recvBuff, 8, 4);
 								log(String.format("接收到来自控制器SN = %d 的二维码数据包....", sn));
+								StringBuffer dataBuffer = new StringBuffer();
+								for (byte b : recvBuff) {
+									dataBuffer.append(b).append(" ");
+								}
+								log(dataBuffer.toString());
 							}
 				    }
 				    else

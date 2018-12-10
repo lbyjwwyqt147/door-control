@@ -1,6 +1,8 @@
 package com.jwell.doorcontrol.utils;
 
 
+import com.jwell.doorcontrol.service.command.WgUdpCommShort;
+
 public class QRTest {
 	
 	/**
@@ -17,6 +19,34 @@ public class QRTest {
 		String infoA =	createQR(2482799616L,pwdData);
 		log("加密后的二维码数据:" + infoA);
 
+    /*    byte[] data =
+                {
+                        (byte) 0x37,(byte) 0x44, (byte)0x34, (byte)0x37, (byte)0x46, (byte)0x37, (byte)0x44, (byte)0x37, (byte)0x46, (byte)0x33,
+                        (byte)0x46, (byte)0x42, (byte)0x45, (byte)0x38, (byte)0x33, (byte)0x39, (byte)0x33, (byte)0x38, (byte)0x35, (byte)0x36,
+                        (byte)0x43, (byte)0x42, (byte)0x38, (byte)0x39, (byte)0x39, (byte)0x32, (byte)0x34, (byte)0x37, (byte)0x38, (byte)0x46,
+                        (byte)0x43, (byte)0x41
+                };*/
+        byte[] data =
+                {
+                        55, 68, 52, 55, 70, 55, 68, 55, 70, 51, 70, 66, 69, 56, 51, 57, 51, 56,53, 54, 67, 66, 56, 57, 57, 50, 52, 55, 56, 70, 67, 65
+                };
+
+        byte [] s = "2482799616".getBytes();
+        StringBuffer d = new StringBuffer();
+        for (byte b : s) {
+           // log(String.format("0x%02x",b));
+           d.append(b).append(" ");
+        }
+        log(d.toString());
+        log("解密后的二维码数据:" +  SM4.decodeSM4toString(data, pwdData));
+        log(new String(pwdData));
+        log(String.format("%02x",23));
+        int a  = Integer.parseInt("17",16);
+
+        log(a + "");
+
+        log(SM4.decodeSM4toString(SM4.encodeSM4("7D47F7D7F3FBE8393856CB8992478FCA", pwdData), pwdData));
+        log(DenaryConvertUtil.toHexString(data));
     }
 
 	public static void log(String info) 
