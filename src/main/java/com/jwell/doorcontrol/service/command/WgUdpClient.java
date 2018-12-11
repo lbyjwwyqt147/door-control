@@ -1,11 +1,19 @@
 package com.jwell.doorcontrol.service.command;
 
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.TypeReference;
+import com.jwell.boot.utilscommon.redis.RedisUtil;
 import com.jwell.boot.utilscommon.utils.ThreadPoolExecutorFactory;
+import com.jwell.doorcontrol.dto.RedisKeyDto;
+import com.jwell.doorcontrol.dto.VisitorInfoDto;
+import com.jwell.doorcontrol.utils.DenaryConvertUtil;
 import com.jwell.doorcontrol.utils.SM4;
 import lombok.extern.log4j.Log4j2;
 import org.apache.mina.transport.socket.DatagramSessionConfig;
 import org.apache.mina.transport.socket.nio.NioDatagramAcceptor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
@@ -29,6 +37,10 @@ public class WgUdpClient {
     private static ThreadPoolExecutor threadPoolExecutor = ThreadPoolExecutorFactory.getThreadPoolExecutor();
     @Resource(name = "scanCodeOpenDoorCommand")
     private  ScanCodeOpenDoorCommand scanCodeOpenDoorCommand;
+    @Resource(name = "searchControllerCommand")
+    private AbstractSendCommand searchControllerCommand;
+    @Autowired
+    private RedisUtil redisUtil;
 
     /**
      * 链接并运行监控服务器
@@ -51,8 +63,10 @@ public class WgUdpClient {
 
         log.info("先运行云服务器...");
         log.info(String.format(" 云服务器IP=%s,  Port=%d...", controllerInfo.getWatchServerIp(), controllerInfo.getWatchServerPort()));
+        // 默认启动服务器 主动搜索微耕控制器
+        this.searchControllerCommand.commandExecute(controllerInfo);
         //服务器运行....
-        ret = watchingServerRuning(controllerInfo);
+        ret = this.watchingServerRuning(controllerInfo);
         if (ret == 0) {
             log.info("云服务器监控程序启动 失败...[请检查IP和端口 是否被占用]");
         } else {
@@ -80,7 +94,6 @@ public class WgUdpClient {
         try {
             acceptor.bind(new InetSocketAddress(controllerInfo.getWatchServerIp(), controllerInfo.getWatchServerPort()));
             log.info("################# 开始监控控制器数据 ############################");
-          //  startMonitoring(controllerInfo);
             //开启线程运行数据监控
             threadPoolExecutor.execute(new Runnable() {
                 @Override
@@ -103,90 +116,86 @@ public class WgUdpClient {
      * @param controllerInfo
      */
     private  void startMonitoring(WgControllerInfo controllerInfo) {
-       /* new Thread() {
-            @Override
-            public void run() {*/
-                //记录索引号
-                long recordIndex = 0;
-                while(true) {
-                    if (!queue.isEmpty()) {
-                        byte[] recvBuff;
-                        synchronized (queue) {
-                            recvBuff= queue.poll();
-                        }
-                        if ((recvBuff[1] == 0x20)) {
-                            // 控制器SN
-                            long sn = WgUdpCommShort.getLongByByte(recvBuff, 4, 4);
-                            int controlerSn = Integer.parseInt(String.valueOf(sn));
-                            long recordIndexGet = WgUdpCommShort.getLongByByte(recvBuff, 8, 4);
-                            log.info(String.format("接收到来自控制器SN = %d 的数据包..##########", controlerSn));
-                            int iget = WatchingShortHandler.arrSNReceived.indexOf(controlerSn);
-                            if (iget >= 0) {
-                                if (WatchingShortHandler.arrControllerInfo.size() >= iget) {
-                                    WgControllerInfo  info = WatchingShortHandler.arrControllerInfo.get(iget);
-                                    if (info != null) {
-                                        recordIndex = info.getRecordIndex4WatchingRemoteOpen();
-                                        info.setRecordIndex4WatchingRemoteOpen(recordIndexGet);
-                                        if (recordIndex < recordIndexGet) {
-                                            recordIndex = recordIndexGet;
-                                            // 显示日志记录
-                                            displayRecordInformation(recvBuff);
-                                        }
-                                    }
+        //记录索引号
+        long recordIndex = 0;
+        while(true) {
+            if (!queue.isEmpty()) {
+                byte[] recvBuff;
+                synchronized (queue) {
+                    recvBuff= queue.poll();
+                }
+                if ((recvBuff[1] == 0x20)) {
+                    // 控制器SN
+                    long sn = WgUdpCommShort.getLongByByte(recvBuff, 4, 4);
+                    int controlerSn = Integer.parseInt(String.valueOf(sn));
+                    long recordIndexGet = WgUdpCommShort.getLongByByte(recvBuff, 8, 4);
+                    log.info(String.format("接收到来自控制器SN = %d 的数据包..##########", controlerSn));
+                    int iget = WatchingShortHandler.arrSNReceived.indexOf(controlerSn);
+                    if (iget >= 0) {
+                        if (WatchingShortHandler.arrControllerInfo.size() >= iget) {
+                            WgControllerInfo  info = WatchingShortHandler.arrControllerInfo.get(iget);
+                            if (info != null) {
+                                recordIndex = info.getRecordIndex4WatchingRemoteOpen();
+                                info.setRecordIndex4WatchingRemoteOpen(recordIndexGet);
+                                if (recordIndex < recordIndexGet) {
+                                    recordIndex = recordIndexGet;
+                                    // 显示日志记录
+                                    displayRecordInformation(recvBuff);
                                 }
                             }
-                        } else if ((recvBuff[1] == 0x22)) {
-                            long sn = WgUdpCommShort.getLongByByte(recvBuff, 4, 4);
-                            long recordIndexGet = WgUdpCommShort.getLongByByte(recvBuff, 8, 4);
-                            log.info(String.format("接收到来自控制器SN = %d 的二维码数据包....", sn));
-                            int i = 0;
-                            int j = 0;
-                            StringBuffer resultDataBuffer = new StringBuffer();
-                            StringBuffer quickMarkDataBuffer = new StringBuffer();
-                            byte[] quickMarkDataArrays = new byte[32];
-                            for (byte v : recvBuff) {
-                                String newValue = String.format("%02x",v).toUpperCase();
-                                if (i > 63 && i < 96) {
-                                    quickMarkDataArrays[j] = v;
-                                    j++;
-                                    quickMarkDataBuffer.append(newValue).append(" ");
-                                }
-                                i++;
-                                resultDataBuffer.append(newValue).append(" ");
-                            }
-                            log.info(resultDataBuffer.toString());
-                            log.info("二维码原始数据：" + quickMarkDataBuffer.toString());
-
-                            /*byte[] pwdData=
-                                    {
-                                            (byte)0x30, (byte)0x31, (byte)0x32, (byte)0x33, (byte)0x34, (byte)0x35, (byte)0x36, (byte)0x37,
-                                            (byte)0x38, (byte)0x39, (byte)0x41, (byte)0x42, (byte)0x43, (byte)0x44, (byte)0x45, (byte)0x46
-                                    };
-                            log.info("二维码原始数据(转换为字符串): " + SM4.decodeSM4toString(quickMarkDataArrays, pwdData));*/
-                            WgControllerInfo wgControllerInfo = new WgControllerInfo();
-                            // 控制器sn
-                            wgControllerInfo.setControllerSN(sn);
-                            // 卡号
-                            wgControllerInfo.setCardNo(2482799616L);
-                            // 门号
-                            //14	门号(1,2,3,4)	1
-                            int recordDoorNO = WgUdpCommShort.getIntByByte(recvBuff[14]);
-                            wgControllerInfo.setDoorNo(recordDoorNO);
-                            scanCodeOpenDoorCommand.openDoor(wgControllerInfo);
-
-                        }
-                    } else {
-                        long times = 100;
-                        try {
-                            // 增加延时
-                            Thread.sleep(times);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
                         }
                     }
+                } else if ((recvBuff[1] == 0x22)) {
+                    long sn = WgUdpCommShort.getLongByByte(recvBuff, 4, 4);
+                    long recordIndexGet = WgUdpCommShort.getLongByByte(recvBuff, 8, 4);
+                    log.info(String.format("接收到来自控制器SN = %d 的二维码数据包....", sn));
+                    int i = 0;
+                    int j = 0;
+                    StringBuffer resultDataBuffer = new StringBuffer();
+                    StringBuffer quickMarkDataBuffer = new StringBuffer();
+                    byte[] quickMarkDataArrays = new byte[32];
+                    for (byte v : recvBuff) {
+                        String newValue = String.format("%02x",v).toUpperCase();
+                        if (i > 63 && i < 96) {
+                            quickMarkDataArrays[j] = v;
+                            j++;
+                            quickMarkDataBuffer.append(newValue).append(" ");
+                        }
+                        i++;
+                        resultDataBuffer.append(newValue).append(" ");
+                    }
+                    log.info(resultDataBuffer.toString());
+                    log.info("二维码原始数据：" + quickMarkDataBuffer.toString());
+                    // 二维码数据内容
+                    String quickMarkDataContent = DenaryConvertUtil.byteToString(quickMarkDataArrays);
+                    log.info("二维码原始数据(转换为字符串): " + quickMarkDataContent);
+                    WgControllerInfo wgControllerInfo = new WgControllerInfo();
+                    // 控制器sn
+                    wgControllerInfo.setControllerSN(sn);
+                    // 卡号
+                    // 从redis 中获取二维码对应的卡号信息
+                    Object redisResult = redisUtil.hget(RedisKeyDto.GATE_QR_CODE_KEY, quickMarkDataContent);
+                    VisitorInfoDto visitorInfo = JSON.parseObject(redisResult.toString(),  new TypeReference<VisitorInfoDto>() {});
+                    log.info("二维码原始数据中包含的卡号: " + visitorInfo.getCardNo());
+                    wgControllerInfo.setCardNo(visitorInfo.getCardNo());
+                    //14	门号(1,2,3,4)	1
+                    int recordDoorNO = WgUdpCommShort.getIntByByte(recvBuff[14]);
+                    wgControllerInfo.setDoorNo(recordDoorNO);
+                    wgControllerInfo.setQuickMarkDataContent(quickMarkDataContent);
+                    // 执行开门命令
+                    scanCodeOpenDoorCommand.openDoor(wgControllerInfo);
+
                 }
-      //      }
-       // }.start();
+            } else {
+                long times = 100;
+                try {
+                    // 增加延时
+                    Thread.sleep(times);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
     }
 
 

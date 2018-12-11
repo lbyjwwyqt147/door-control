@@ -1,8 +1,16 @@
 package com.jwell.doorcontrol.service.command;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
 import com.jwell.boot.utilscommon.exception.DescribeException;
+import com.jwell.boot.utilscommon.redis.RedisUtil;
+import com.jwell.boot.utilscommon.utils.DateTimeUtils;
+import com.jwell.doorcontrol.dto.RedisKeyDto;
+import com.jwell.doorcontrol.dto.VisitorInfoDto;
 import com.jwell.doorcontrol.utils.DenaryConvertUtil;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.Collections;
@@ -16,6 +24,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Component(value = "accessAuthorizationCommand")
 @Log4j2
 public class AccessAuthorizationCommand extends AbstractSendCommand {
+    @Autowired
+    private RedisUtil redisUtil;
 
     @Override
     public AtomicInteger commandExecute(WgControllerInfo wgControllerInfo) {
@@ -32,6 +42,8 @@ public class AccessAuthorizationCommand extends AbstractSendCommand {
                 return queryAuthorization(wgControllerInfo);
             case 6:
                 return batchUploadAuthorization(wgControllerInfo);
+            case 7:
+                return uploadAuthorizationToAllControl(wgControllerInfo);
             default:
                 return new AtomicInteger(0);
         }
@@ -312,4 +324,34 @@ public class AccessAuthorizationCommand extends AbstractSendCommand {
         return new AtomicInteger(0);
     }
 
+    /**
+     *  上传权限到所有控制器上
+     *  controllerSN  控制器设备序列号
+     *  cardNo 卡号
+     *  quickMarkDataContent  访客二维码数据
+     *  visitorInfo 访客信息
+     * @param wgControllerInfo
+     */
+    private AtomicInteger uploadAuthorizationToAllControl(WgControllerInfo wgControllerInfo) {
+        Object redisResult = redisUtil.lpop(RedisKeyDto.WEI_GENG_CONTROL_KEY);
+        if (redisResult != null) {
+            // 获取所有微耕控制器
+            JSONArray controllerSnArray = JSON.parseArray(redisResult.toString());
+            // 将卡号权限上传到所有控制器
+            for (Object controllerSn : controllerSnArray) {
+                WgControllerInfo controllerInfo = new WgControllerInfo();
+                controllerInfo.setMark((byte) 0);
+                controllerInfo.setControllerSN(Long.valueOf(controllerSn.toString()));
+                controllerInfo.setCardNo(wgControllerInfo.getCardNo());
+                controllerInfo.setStartTime(wgControllerInfo.getStartTime());
+                controllerInfo.setEndTime(wgControllerInfo.getEndTime());
+                this.uploadAuthorization(wgControllerInfo);
+            }
+        }
+        if (StringUtils.isNotBlank(wgControllerInfo.getQuickMarkDataContent())) {
+            //将访客二维码信息存放到redis中
+            redisUtil.hset(RedisKeyDto.GATE_QR_CODE_KEY, wgControllerInfo.getQuickMarkDataContent(), JSON.toJSONString(wgControllerInfo.getVisitorInfo()));
+        }
+        return new AtomicInteger(1);
+    }
 }

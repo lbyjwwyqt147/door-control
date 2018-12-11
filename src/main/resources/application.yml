@@ -1,2 +1,38 @@
 server:
   port: 8080
+
+spring:
+  # redis 配置
+  redis:
+    host: 10.130.0.65
+    port: 6001
+    password: redis123
+    database: 6
+    jedis:
+      pool:
+        #最大连接数
+        max-active: 8
+        #最大空闲
+        max-idle: 8
+        #最大阻塞等待时间(负数表示没限制)
+        max-wait: -1ms
+        #最小空闲
+        min-idle: 0
+    #连接超时时间
+    timeout: 1000ms
+
+
+# 自定义系统中的属性信息
+jwell:
+  # 访问频率限制
+  access-frequency-restrict: 5
+  sms:
+    # 短信服务地址
+    send-url: http://10.130.0.160:8022/jplat-sms-client/sms/sendMessage
+    # 短信系统码
+    system-code: jwell-znbg
+    # 短信模板
+    template:
+      #邀请访客发送二维码短信模板
+      invitation-code: jwell-znbg-008
+

@@ -1,5 +1,6 @@
 package com.jwell.doorcontrol.service.command;
 
+import com.jwell.doorcontrol.dto.VisitorInfoDto;
 import lombok.Data;
 import org.apache.mina.core.session.IoSession;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -56,6 +57,11 @@ public class WgControllerInfo implements Serializable {
     private List<Integer> cardNoList = new ArrayList<>();
     /** bForceGetAllSwipe  >=1  强制提取所有记录(包括之前已提取的), ==0 表示 提取新的记录(不含 已提取过的) */
     private Integer bForceGetAllSwipe;
+    /** 二维码数据内容 */
+    private String quickMarkDataContent;
+    /** 访客信息 */
+    private VisitorInfoDto visitorInfo;
+
 
     /**
      * 更新信息

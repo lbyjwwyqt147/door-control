@@ -37,6 +37,12 @@ public abstract class AbstractSendCommand {
             recvBuff = wgUdpCommShort.run();
             if (recvBuff != null) {
                 if (WgUdpCommShort.getIntByByte(recvBuff[8]) == 1) {
+                    StringBuffer resultDataBuffer = new StringBuffer();
+                    for (byte v : recvBuff) {
+                        String newValue = String.format("%02x",v).toUpperCase();
+                        resultDataBuffer.append(newValue).append(" ");
+                    }
+                    log.info("控制器返回报文数据 = " + resultDataBuffer.toString());
                     success.set(1);
                     log.info(logMessage.append(successPromptMessage).toString());
                     this.displayRecordInfo(recvBuff);

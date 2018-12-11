@@ -92,4 +92,22 @@ public final class DenaryConvertUtil {
         return hexString.toString().toLowerCase();
     }
 
+    /**
+     *  byte[] 转字符串
+     * @param bytes
+     * @return
+     */
+    public static String byteToString(byte[] bytes) {
+        StringBuilder strBuilder = new StringBuilder();
+        for (int i = 0; i <bytes.length ; i++) {
+            if (bytes[i]!=0){
+                strBuilder.append((char)bytes[i]);
+            }else {
+                break;
+            }
+
+        }
+        return strBuilder.toString();
+    }
+
 }

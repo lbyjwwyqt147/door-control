@@ -1,10 +1,15 @@
 package com.jwell.doorcontrol.service.command;
 
+import com.jwell.boot.utilscommon.redis.RedisUtil;
+import com.jwell.doorcontrol.dto.RedisKeyDto;
 import lombok.extern.log4j.Log4j2;
+import org.apache.mina.util.ConcurrentHashSet;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.net.*;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /***
@@ -14,6 +19,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Component(value = "searchControllerCommand")
 @Log4j2
 public class SearchControllerCommand extends AbstractSendCommand{
+
+    @Autowired
+    private RedisUtil redisUtil;
 
     @Override
     public AtomicInteger commandExecute(WgControllerInfo wgControllerInfo) {
@@ -100,19 +108,22 @@ public class SearchControllerCommand extends AbstractSendCommand{
         } catch (SocketException e1) {
             e1.printStackTrace();
         }
+        Set<Long> controllerSnList = new ConcurrentHashSet<>();
         while (true) {
             byte data[] = new byte[64];
             packet = new DatagramPacket(data, data.length);
             try {
                 socket.receive(packet);
-                long controllerSN = 0;
-                controllerSN = getLongByByte(data, 4, 4);
-                log.info(String.format("控制器SN = %d", controllerSN));
+                long controllerSn = 0L;
+                controllerSn = getLongByByte(data, 4, 4);
+                controllerSnList.add(controllerSn);
+                log.info(String.format("控制器SN = %d", controllerSn));
             } catch (IOException e) {
                 // e.printStackTrace();
                 break;
             }
         }
+        redisUtil.lpush(RedisKeyDto.WEI_GENG_CONTROL_KEY, controllerSnList);
         log.info("### 搜索控制器 完成   结束.................. ");
     }
 }
